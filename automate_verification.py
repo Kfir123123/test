@@ -66,10 +66,10 @@ def generate_pdf(docx_path, pdf_path):
         pdf.set_font("Arial", size=12)
 
         if "Tester" in paragraph.text:
-            x = pdf.get_x() + 100
+            x = pdf.get_x() + 150
             y = pdf.get_y() - 5
-            pdf.cell(0, 10, txt="Tester: " + tester_name + "                Signature: ",
-                     ln=1)
+            pdf.cell(0, 10, txt="Tester: " + tester_name + "\t" * 75 + "Signature: ", ln=1)
+
             pdf.image(TESTER_SIGNATURE, x=x, y=y, w=30, h=20)  # Add the signature image
             continue
 
