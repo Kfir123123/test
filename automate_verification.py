@@ -16,6 +16,7 @@ def pre_conditions(file_path):
     for paragraph in doc.paragraphs:
         paragraphs.append(paragraph.text)
 
+
     for line in paragraphs:
         if "Pre conditions" in line:
             return line
@@ -26,7 +27,9 @@ def pre_conditions(file_path):
 def read_table():
     keys = None
     for i, row in enumerate(table.rows):
-        text = [cell.text for cell in row.cells]
+        text = []
+        for cell in row.cells:
+            text.append(cell.text)
 
         # Establish the mapping based on the first row
         # headers; these will become the keys of our dictionary
@@ -38,10 +41,6 @@ def read_table():
         # keys to values for this row
         row_data = dict(zip(keys, text))
         data.append(row_data)
-
-
-def replace_non_encodable(text):
-    return text.encode('ascii', 'ignore').decode('ascii')
 
 
 def generate_pdf(docx_path, pdf_path):
@@ -79,11 +78,11 @@ def generate_pdf(docx_path, pdf_path):
             continue
 
         if "version" in paragraph.text:
-            pdf.cell(0, 10, txt="SW version \ build number: " + replace_non_encodable(version_number), ln=1)
+            pdf.cell(0, 10, txt="SW version \ build number: " + version_number, ln=1)
             continue
 
         if "Summary" in paragraph.text:
-            pdf.cell(0, 10, txt="Summary, conclusion and recommendations: " + replace_non_encodable(summary), ln=1)
+            pdf.cell(0, 10, txt="Summary, conclusion and recommendations: " + summary, ln=1)
             continue
 
         if write_table:
@@ -108,13 +107,13 @@ def generate_pdf(docx_path, pdf_path):
                             test_info = True
                             continue
 
-                        pdf.cell(0, 7, txt=str(index) + ". Test: " + replace_non_encodable(to_print), ln=1)
+                        pdf.cell(0, 7, txt=str(index) + ". Test: " + to_print, ln=1)
                         test_info = False
                         result_info = True
 
                     # second col
                     elif result_info:
-                        pdf.cell(0, 7, txt="      Expected_Results: " + replace_non_encodable(to_print), ln=1)
+                        pdf.cell(0, 7, txt="      Expected_Results: " + to_print, ln=1)
                         result_info = False
                         result = True
 
@@ -137,7 +136,7 @@ def generate_pdf(docx_path, pdf_path):
                     # fourth col
                     else:
                         if comment_results[index - 1] != "":
-                            pdf.cell(0, 7, txt="      Comments: " + replace_non_encodable(comment_results[index - 1]),
+                            pdf.cell(0, 7, txt="      Comments: " + comment_results[index - 1],
                                      ln=1)
                         first_row = True
                         test_info = True
@@ -156,6 +155,10 @@ def generate_pdf(docx_path, pdf_path):
         file.write(pdf.output(dest='S').encode('latin-1'))
 
 
+
+
+
+
 for test_type in os.listdir(VERIFICATION_TEST_PATH):
     print(test_type.upper())
     version_number = input("please insert the version: ")
@@ -168,9 +171,9 @@ for test_type in os.listdir(VERIFICATION_TEST_PATH):
                 break
 
         if pdf_exist:
-            cont = input('this test case has already been tested, would you like to skip? y/n')
+            cont = input('this test case has already been tested, would you like to skip? y/n ')
             while cont != 'y' and cont != 'n':
-                cont = input('Illegal input \nthis test case has already been tested, would you like to skip? y/n')
+                cont = input('Illegal input \nthis test case has already been tested, would you like to skip? y/n ')
             if cont == 'y':
                 continue
 
