@@ -20,6 +20,8 @@ def pre_conditions(file_path):
     for line in paragraphs:
         if "Pre conditions" in line:
             return line
+        if "Preconditions" in line:
+            return line.replace("Preconditions","Pre conditions")
 
     return "Couldn't find the Pre conditions instructions"
 
@@ -164,20 +166,21 @@ for test_type in os.listdir(VERIFICATION_TEST_PATH):
     version_number = input("please insert the version: ")
 
     for test_file in os.listdir(os.path.join(VERIFICATION_TEST_PATH, test_type)):
-        pdf_exist = False
-        for f in os.listdir(os.path.join(VERIFICATION_TEST_PATH, test_type)):
-            if f.endswith('pdf'):
-                pdf_exist = True
-                break
+        if "pdf" in test_file:
+            continue
 
-        if pdf_exist:
+        if test_file.endswith('pdf') in os.listdir(os.path.join(VERIFICATION_TEST_PATH, test_type)):
+
             cont = input('this test case has already been tested, would you like to skip? y/n ')
             while cont != 'y' and cont != 'n':
                 cont = input('Illegal input \nthis test case has already been tested, would you like to skip? y/n ')
             if cont == 'y':
                 continue
+        while True:
+            tester_name = input("please insert tester name: ")
+            if tester_name != "":
+                break
 
-        tester_name = input("please insert tester name: ")
         test_path = os.path.join(VERIFICATION_TEST_PATH, test_type, test_file)
 
         date_string = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -195,6 +198,7 @@ for test_type in os.listdir(VERIFICATION_TEST_PATH):
         # read table
         document = Document(test_path)
         table = document.tables[0]
+
         data = []
         read_table()
 
@@ -202,9 +206,10 @@ for test_type in os.listdir(VERIFICATION_TEST_PATH):
         test_info = True
         result_info = False
         result = False
+        break_flag = False
 
         for idx, row_data in enumerate(data):
-            if idx == len(data) - 3:
+            if break_flag:
                 break
             for head_line, to_print in row_data.items():
                 # skip first row
@@ -212,6 +217,9 @@ for test_type in os.listdir(VERIFICATION_TEST_PATH):
                     first_row = False
                     continue
 
+                if "Test" in head_line and to_print == "":
+                    break_flag = True
+                    break
                 print(f"{head_line}:", end=" ")
 
                 # first col
