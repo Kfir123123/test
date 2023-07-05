@@ -5,10 +5,39 @@ import datetime
 from docx.api import Document
 from fpdf import FPDF
 
-VERIFICATION_TEST_PATH = r"C:\verification_tests"
+VERIFICATION_TEST_PATH = r"C:\1.22"
 OUTPUT_PATH = ""
 TESTER_SIGNATURE = r"C:\Users\admin\Desktop\signature.JPEG"
+MAX_LINE_LENGTH = 80
 
+
+def write_text(pdf, lines):
+    for line in lines:
+        pdf.cell(0, 10, txt=line.replace('_', ''), ln=1)
+
+
+
+def split_text(text):
+    lines = []
+    current_line = ""
+
+    if len(text) <= MAX_LINE_LENGTH:
+        lines.append(text)
+    else:
+        i = 0
+        while i in range(0, len(text)):
+            if i + MAX_LINE_LENGTH < len(text):
+                current_line = text[i:i + MAX_LINE_LENGTH]
+            else:
+                current_line = text[i:len(text)]
+
+            i += MAX_LINE_LENGTH
+
+
+            lines.append(current_line)
+
+
+    return lines
 
 def pre_conditions(file_path):
     doc = docx.Document(file_path)
@@ -59,6 +88,7 @@ def generate_pdf(docx_path, pdf_path):
 
     # Iterate over the paragraphs in the document
     for paragraph in doc.paragraphs:
+        paragraph.text.replace('_', '')
         if first_time:
             pdf.set_font("Arial", size=16, style="B")
             pdf.cell(0, 10, txt=paragraph.text, ln=1, align="C")
@@ -75,19 +105,19 @@ def generate_pdf(docx_path, pdf_path):
             pdf.image(TESTER_SIGNATURE, x=x, y=y, w=30, h=20)  # Add the signature image
             continue
 
-        if "Date" in paragraph.text:
+        elif "Date" in paragraph.text:
             pdf.cell(0, 10, txt="Date: " + datetime.datetime.now().strftime("%Y-%m-%d"), ln=1)
             continue
 
-        if "version" in paragraph.text:
+        elif "version" in paragraph.text:
             pdf.cell(0, 10, txt="SW version \ build number: " + version_number, ln=1)
             continue
 
-        if "Summary" in paragraph.text:
-            pdf.cell(0, 10, txt="Summary, conclusion and recommendations: " + summary, ln=1)
+        elif "Summary" in paragraph.text:
+            write_text(pdf, split_text("Summary, conclusion and recommendations: " + summary))
             continue
 
-        if write_table:
+        elif write_table:
             pdf.set_font("Arial", size=10)
             first_row = True
             test_info = True
@@ -150,7 +180,8 @@ def generate_pdf(docx_path, pdf_path):
         if "Pre conditions" in paragraph.text:
             write_table = True
 
-        pdf.cell(0, 10, txt=paragraph.text, ln=1)
+        write_text(pdf, split_text(paragraph.text))
+
 
     # Save the PDF file
     with open(pdf_path, 'wb') as file:
