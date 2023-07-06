@@ -233,8 +233,8 @@ def generate_pdf(docx_path, pdf_path):
 
 for test_type in os.listdir(VERIFICATION_TEST_PATH):
     print(test_type.upper())
-    #version_number = input("please insert the version: ")                                                                  #**************************************************
-    version_number = "1.22"
+    version_number = input("please insert the version: ")
+
     for test_file in os.listdir(os.path.join(VERIFICATION_TEST_PATH, test_type)):
         if not test_file.endswith("docx"):
             continue
@@ -255,8 +255,7 @@ for test_type in os.listdir(VERIFICATION_TEST_PATH):
             continue
 
         while True:
-            #tester_name = input("please insert tester name: ")                                                                     #******************************
-            tester_name = "kfir"
+            tester_name = input("please insert tester name: ")
             if tester_name != "":
                 break
 
@@ -321,8 +320,7 @@ for test_type in os.listdir(VERIFICATION_TEST_PATH):
                 # third col
                 elif result:
                     while True:
-                        #res = input("v/x? ").lower()                                       #********************************************************
-                        res ="v"
+                        res = input("v/x? ").lower()
                         if res in ['v', 'x']:
                             test_results.append(res)
                             result = False
@@ -333,13 +331,11 @@ for test_type in os.listdir(VERIFICATION_TEST_PATH):
                 # fourth col
                 else:
                     print("(press enter to continue)")
-                    #comment = input().lower()                                                  #**************************************************
-                    comment = "nothing"
+                    comment = input().lower()
                     comment_results.append(comment)
                     first_row = True
                     test_info = True
                     idx += 1
 
-        #summary = input("Summary, conclusion and recommendations: (press enter to continue)")              #*******************************************
-        summary = "kfir"
+        summary = input("Summary, conclusion and recommendations: (press enter to continue)")
         generate_pdf(test_path, OUTPUT_PATH)
