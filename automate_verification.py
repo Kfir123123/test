@@ -11,6 +11,32 @@ TESTER_SIGNATURE = r"C:\Users\admin\Desktop\signature.JPEG"
 MAX_LINE_LENGTH = 80
 
 
+
+def write_text_table(pdf, cell_width, cell_height, lines, move_to_next_line):
+    for line in lines:
+        pdf.cell(cell_width, cell_height, txt=line.replace('_', ''), ln=move_to_next_line)
+
+def split_text_table(text, additional_space):
+    lines = []
+    add_space = ""
+
+    if len(text) <= MAX_LINE_LENGTH:
+        lines.append(text)
+    else:
+        i = 0
+        while i in range(0, len(text)):
+            if i + MAX_LINE_LENGTH < len(text):
+                current_line = add_space + text[i:i + MAX_LINE_LENGTH]
+            else:
+                current_line = add_space + text[i:len(text)]
+
+            add_space = additional_space
+
+            i += MAX_LINE_LENGTH
+            lines.append(current_line)
+
+    return lines
+
 def write_text(pdf, lines):
     for line in lines:
         pdf.cell(0, 10, txt=line.replace('_', ''), ln=1)
@@ -19,9 +45,14 @@ def write_text(pdf, lines):
 
 def split_text(text):
     lines = []
-    current_line = ""
+    flag = False
+    if "Configurations" and "Files" in text:
+        split_text = text.split("Files")
+        lines.append(split_text[0])
+        lines.append("Files" + split_text[1])
+        flag = True
 
-    if len(text) <= MAX_LINE_LENGTH:
+    elif len(text) <= MAX_LINE_LENGTH:
         lines.append(text)
     else:
         i = 0
@@ -32,9 +63,17 @@ def split_text(text):
                 current_line = text[i:len(text)]
 
             i += MAX_LINE_LENGTH
-
-
             lines.append(current_line)
+
+    if flag:
+        new_lines = []
+        for line in lines:
+            if len(line) > MAX_LINE_LENGTH:
+                new_lines.append(line[:MAX_LINE_LENGTH])
+                new_lines.append(line[MAX_LINE_LENGTH:])
+            else:
+                new_lines.append(line)
+
 
 
     return lines
@@ -138,20 +177,19 @@ def generate_pdf(docx_path, pdf_path):
                             first_row = True
                             test_info = True
                             continue
-
-                        pdf.cell(0, 7, txt=str(index) + ". Test: " + to_print, ln=1)
+                        write_text_table(pdf, 0, 7, split_text_table(str(index) + ". Test: " + to_print, "    "), 1)
                         test_info = False
                         result_info = True
 
                     # second col
                     elif result_info:
-                        pdf.cell(0, 7, txt="      Expected_Results: " + to_print, ln=1)
+                        write_text_table(pdf, 0, 7, split_text_table("    Expected_Results: " + to_print, "       "), 1)
                         result_info = False
                         result = True
 
 
                     elif result:
-                        pdf.cell(40, 7, txt="      Result:", ln=0)
+                        pdf.cell(40, 7, txt="    Result:", ln=0)
 
                         # Set the text color based on the result
                         if test_results[index - 1] == "v":
@@ -168,8 +206,9 @@ def generate_pdf(docx_path, pdf_path):
                     # fourth col
                     else:
                         if comment_results[index - 1] != "":
-                            pdf.cell(0, 7, txt="      Comments: " + comment_results[index - 1],
-                                     ln=1)
+                            write_text_table(pdf, 0, 7,
+                                             split_text_table("    Comments: " + comment_results[index - 1], "       "), 1)
+
                         first_row = True
                         test_info = True
                         index += 1
