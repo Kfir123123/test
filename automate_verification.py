@@ -11,10 +11,10 @@ TESTER_SIGNATURE = r"C:\Users\admin\Desktop\signature.JPEG"
 MAX_LINE_LENGTH = 80
 
 
-
 def write_text_table(pdf, cell_width, cell_height, lines, move_to_next_line):
     for line in lines:
         pdf.cell(cell_width, cell_height, txt=line.replace('_', ''), ln=move_to_next_line)
+
 
 def split_text_table(text, additional_space):
     lines = []
@@ -37,10 +37,22 @@ def split_text_table(text, additional_space):
 
     return lines
 
+
 def write_text(pdf, lines):
     for line in lines:
         pdf.cell(0, 10, txt=line.replace('_', ''), ln=1)
 
+
+def split_text_helper(text, lines):
+    i = 0
+    while i in range(0, len(text)):
+        if i + MAX_LINE_LENGTH < len(text):
+            current_line = text[i:i + MAX_LINE_LENGTH]
+        else:
+            current_line = text[i:len(text)]
+
+        i += MAX_LINE_LENGTH
+        lines.append(current_line)
 
 
 def split_text(text):
@@ -48,22 +60,14 @@ def split_text(text):
     flag = False
     if "Configurations" and "Files" in text:
         split_text = text.split("Files")
-        lines.append(split_text[0])
-        lines.append("Files" + split_text[1])
+        split_text_helper(split_text[0], lines)
+        split_text_helper("Files" + split_text[1], lines)
         flag = True
 
     elif len(text) <= MAX_LINE_LENGTH:
         lines.append(text)
     else:
-        i = 0
-        while i in range(0, len(text)):
-            if i + MAX_LINE_LENGTH < len(text):
-                current_line = text[i:i + MAX_LINE_LENGTH]
-            else:
-                current_line = text[i:len(text)]
-
-            i += MAX_LINE_LENGTH
-            lines.append(current_line)
+        split_text_helper(text, lines)
 
     if flag:
         new_lines = []
@@ -74,9 +78,8 @@ def split_text(text):
             else:
                 new_lines.append(line)
 
-
-
     return lines
+
 
 def pre_conditions(file_path):
     doc = docx.Document(file_path)
@@ -84,12 +87,11 @@ def pre_conditions(file_path):
     for paragraph in doc.paragraphs:
         paragraphs.append(paragraph.text)
 
-
     for line in paragraphs:
         if "Pre conditions" in line:
             return line
         if "Preconditions" in line:
-            return line.replace("Preconditions","Pre conditions")
+            return line.replace("Preconditions", "Pre conditions")
 
     return "Couldn't find the Pre conditions instructions"
 
@@ -129,8 +131,9 @@ def generate_pdf(docx_path, pdf_path):
     for paragraph in doc.paragraphs:
         paragraph.text.replace('_', '')
         if first_time:
-            pdf.set_font("Arial", size=16, style="B")
-            pdf.cell(0, 10, txt=paragraph.text, ln=1, align="C")
+            pdf.set_font("Arial", size=15, style="B")
+            for line in split_text(paragraph.text):
+                pdf.cell(0, 10, txt=line, ln=1, align="C")
             first_time = False
             continue
 
@@ -191,13 +194,14 @@ def generate_pdf(docx_path, pdf_path):
                     elif result:
                         pdf.cell(40, 7, txt="    Result:", ln=0)
 
-                        # Set the text color based on the result
-                        if test_results[index - 1] == "v":
-                            pdf.set_text_color(0, 128, 0)  # Set text color to green for "Pass"
-                            pdf.cell(35, 7, txt="Pass", ln=1, align='L')
-                        else:
-                            pdf.set_text_color(255, 0, 0)  # Set text color to red for "Fail"
-                            pdf.cell(35, 7, txt="Fail", ln=1, align='L')
+                        if index <= len(test_results):
+                            # Set the text color based on the result
+                            if test_results[index - 1] == "v":
+                                pdf.set_text_color(0, 128, 0)  # Set text color to green for "Pass"
+                                pdf.cell(35, 7, txt="Pass", ln=1, align='L')
+                            else:
+                                pdf.set_text_color(255, 0, 0)  # Set text color to red for "Fail"
+                                pdf.cell(35, 7, txt="Fail", ln=1, align='L')
 
                         # Reset the text color to black
                         pdf.set_text_color(0, 0, 0)
@@ -205,9 +209,10 @@ def generate_pdf(docx_path, pdf_path):
 
                     # fourth col
                     else:
-                        if comment_results[index - 1] != "":
+                        if index <= len(comment_results) and comment_results[index - 1] != "":
                             write_text_table(pdf, 0, 7,
-                                             split_text_table("    Comments: " + comment_results[index - 1], "       "), 1)
+                                             split_text_table("    Comments: " + comment_results[index - 1], "       "),
+                                             1)
 
                         first_row = True
                         test_info = True
@@ -221,33 +226,37 @@ def generate_pdf(docx_path, pdf_path):
 
         write_text(pdf, split_text(paragraph.text))
 
-
     # Save the PDF file
     with open(pdf_path, 'wb') as file:
         file.write(pdf.output(dest='S').encode('latin-1'))
 
 
-
-
-
-
 for test_type in os.listdir(VERIFICATION_TEST_PATH):
     print(test_type.upper())
-    version_number = input("please insert the version: ")
-
+    #version_number = input("please insert the version: ")                                                                  #**************************************************
+    version_number = "1.22"
     for test_file in os.listdir(os.path.join(VERIFICATION_TEST_PATH, test_type)):
-        if "pdf" in test_file:
+        if not test_file.endswith("docx"):
             continue
 
-        if test_file.endswith('pdf') in os.listdir(os.path.join(VERIFICATION_TEST_PATH, test_type)):
+        cont = ""
+        for test_file_temp in os.listdir(os.path.join(VERIFICATION_TEST_PATH, test_type)):
+            if test_file.replace('.docx', '') in test_file_temp and "pdf" in test_file_temp:
+                if test_file.replace('.docx', '') == test_file_temp.replace(".docx", ''):
+                    cont = input(f'this test case {test_file} has already been tested, would you like to skip? y/n ')
+                    while cont != 'y' and cont != 'n':
+                        cont = input(
+                            'Illegal input \nthis test case has already been tested, would you like to skip? y/n ')
+                        if cont == 'y':
+                            break
+                    break
 
-            cont = input('this test case has already been tested, would you like to skip? y/n ')
-            while cont != 'y' and cont != 'n':
-                cont = input('Illegal input \nthis test case has already been tested, would you like to skip? y/n ')
-            if cont == 'y':
-                continue
+        if cont == 'y':
+            continue
+
         while True:
-            tester_name = input("please insert tester name: ")
+            #tester_name = input("please insert tester name: ")                                                                     #******************************
+            tester_name = "kfir"
             if tester_name != "":
                 break
 
@@ -312,7 +321,8 @@ for test_type in os.listdir(VERIFICATION_TEST_PATH):
                 # third col
                 elif result:
                     while True:
-                        res = input("v/x? ").lower()
+                        #res = input("v/x? ").lower()                                       #********************************************************
+                        res ="v"
                         if res in ['v', 'x']:
                             test_results.append(res)
                             result = False
@@ -323,11 +333,13 @@ for test_type in os.listdir(VERIFICATION_TEST_PATH):
                 # fourth col
                 else:
                     print("(press enter to continue)")
-                    comment = input().lower()
+                    #comment = input().lower()                                                  #**************************************************
+                    comment = "nothing"
                     comment_results.append(comment)
                     first_row = True
                     test_info = True
                     idx += 1
 
-        summary = input("Summary, conclusion and recommendations: (press enter to continue)")
+        #summary = input("Summary, conclusion and recommendations: (press enter to continue)")              #*******************************************
+        summary = "kfir"
         generate_pdf(test_path, OUTPUT_PATH)
