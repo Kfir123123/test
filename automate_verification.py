@@ -5,17 +5,19 @@ import datetime
 from docx.api import Document
 from fpdf import FPDF
 
-VERIFICATION_TEST_PATH = r"C:\1.22"
+VERIFICATION_TEST_PATH = r"C:\templates for V1.22"   # enter folder path
 OUTPUT_PATH = ""
-TESTER_SIGNATURE = r"C:\Users\admin\Desktop\signature.JPEG"
+TESTER_SIGNATURE = r"D:\Tamar\Documents\signature.jpg"          # enter signature path
 MAX_LINE_LENGTH = 80
+FOLDER_LIST = os.listdir(VERIFICATION_TEST_PATH)                # initialize list with all the verification folders
+FOLDER_LIST.sort()
 
-
+# write the table with all the verification steps from the docx, on a pdf
 def write_text_table(pdf, cell_width, cell_height, lines, move_to_next_line):
     for line in lines:
         pdf.cell(cell_width, cell_height, txt=line.replace('_', ''), ln=move_to_next_line)
 
-
+# split long text from the table, to an array of sentences
 def split_text_table(text, additional_space):
     lines = []
     add_space = ""
@@ -37,7 +39,7 @@ def split_text_table(text, additional_space):
 
     return lines
 
-
+# write the text from the docx, on a pdf
 def write_text(pdf, lines):
     for line in lines:
         pdf.cell(0, 10, txt=line.replace('_', ''), ln=1)
@@ -54,7 +56,7 @@ def split_text_helper(text, lines):
         i += MAX_LINE_LENGTH
         lines.append(current_line)
 
-
+# split long text, to an array of sentences
 def split_text(text):
     lines = []
     flag = False
@@ -80,7 +82,7 @@ def split_text(text):
 
     return lines
 
-
+# find the pre condition in the docx
 def pre_conditions(file_path):
     doc = docx.Document(file_path)
     paragraphs = []
@@ -95,7 +97,7 @@ def pre_conditions(file_path):
 
     return "Couldn't find the Pre conditions instructions"
 
-
+# read the table from the docx
 def read_table():
     keys = None
     for i, row in enumerate(table.rows):
@@ -114,7 +116,7 @@ def read_table():
         row_data = dict(zip(keys, text))
         data.append(row_data)
 
-
+# generate a pdf with the final result of the specific test
 def generate_pdf(docx_path, pdf_path):
     # Open the DOCX file
     doc = Document(docx_path)
@@ -231,25 +233,67 @@ def generate_pdf(docx_path, pdf_path):
         file.write(pdf.output(dest='S').encode('latin-1'))
 
 
-for test_type in os.listdir(VERIFICATION_TEST_PATH):
+# in case the user want so skip edited folder\files
+test_type_to_reach = ""
+test_file_to_reach = ""
+
+found_flag = False
+choose_file = input("To start from the beginning press 1, to continue from the last file which edited press 2\n")
+if choose_file == "2":
+    for test_type_temp in FOLDER_LIST:
+        if found_flag:
+            break
+        for test_file_temp in os.listdir(os.path.join(VERIFICATION_TEST_PATH, test_type_temp)):
+            if found_flag:
+                break
+
+            if not test_file_temp.endswith("docx"):
+                continue
+
+            test_type_to_reach = test_type_temp
+            test_file_to_reach = test_file_temp
+            found_flag = False
+            file_list = os.listdir(os.path.join(VERIFICATION_TEST_PATH, test_type_temp))
+            for test_file_t in file_list:
+                if test_file_t.split("_")[0] == test_file_temp.split(".")[0]:
+                    found_flag = False
+                    break
+
+                found_flag = True
+
+
+
+for test_type in FOLDER_LIST:
+    # skip folders which already edited
+    if choose_file == "2" and test_type_to_reach != test_type:
+        continue
+
     print(test_type.upper())
-    version_number = input("please insert the version: ")
+    version_number = ""
+    while version_number == "":
+        version_number = input("please insert the version: ")
 
     for test_file in os.listdir(os.path.join(VERIFICATION_TEST_PATH, test_type)):
+        # skip files which already edited
+        if choose_file == "2" and test_file != test_file_to_reach:
+            continue
+        choose_file = "finished"
         if not test_file.endswith("docx"):
             continue
 
+    # in case the user didn't skip edited folder\files
+    # if the current file is already edited, ask the user if he wants to edit the file again or skip to the next file
         cont = ""
         for test_file_temp in os.listdir(os.path.join(VERIFICATION_TEST_PATH, test_type)):
             if test_file.replace('.docx', '') in test_file_temp and "pdf" in test_file_temp:
-                if test_file.replace('.docx', '') == test_file_temp.replace(".docx", ''):
-                    cont = input(f'this test case {test_file} has already been tested, would you like to skip? y/n ')
-                    while cont != 'y' and cont != 'n':
-                        cont = input(
-                            'Illegal input \nthis test case has already been tested, would you like to skip? y/n ')
-                        if cont == 'y':
-                            break
-                    break
+
+                cont = input(f'this test case {test_file} has already been tested, would you like to skip? y/n ')
+                while cont != 'y' and cont != 'n':
+                    cont = input(
+                        'Illegal input \nthis test case has already been tested, would you like to skip? y/n ')
+                    if cont == 'y':
+                        break
+                break
 
         if cont == 'y':
             continue
@@ -286,6 +330,7 @@ for test_type in os.listdir(VERIFICATION_TEST_PATH):
         result = False
         break_flag = False
 
+        # read the docx and receive information from the user
         for idx, row_data in enumerate(data):
             if break_flag:
                 break
