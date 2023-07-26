@@ -7,7 +7,7 @@ from fpdf import FPDF
 
 VERIFICATION_TEST_PATH = r"C:\templates for V1.22"   # enter folder path
 OUTPUT_PATH = ""
-TESTER_SIGNATURE = r"D:\Tamar\Documents\signature.jpg"          # enter signature path
+TESTER_SIGNATURE = r"C:\Users\admin\Desktop\signature.JPEG"          # enter signature path
 MAX_LINE_LENGTH = 80
 FOLDER_LIST = os.listdir(VERIFICATION_TEST_PATH)                # initialize list with all the verification folders
 FOLDER_LIST.sort()
@@ -269,9 +269,14 @@ for test_type in FOLDER_LIST:
         continue
 
     print(test_type.upper())
+
     version_number = ""
     while version_number == "":
         version_number = input("please insert the version: ")
+
+    tester_name = ""
+    while tester_name == "":
+        tester_name = input("please insert tester name: ")
 
     for test_file in os.listdir(os.path.join(VERIFICATION_TEST_PATH, test_type)):
         # skip files which already edited
@@ -285,7 +290,7 @@ for test_type in FOLDER_LIST:
     # if the current file is already edited, ask the user if he wants to edit the file again or skip to the next file
         cont = ""
         for test_file_temp in os.listdir(os.path.join(VERIFICATION_TEST_PATH, test_type)):
-            if test_file.replace('.docx', '') in test_file_temp and "pdf" in test_file_temp:
+            if test_file.replace('.docx', '') in test_file_temp and "pdf" in test_file_temp and test_file.replace('.docx', '') == test_file_temp.split("_"):
 
                 cont = input(f'this test case {test_file} has already been tested, would you like to skip? y/n ')
                 while cont != 'y' and cont != 'n':
@@ -298,16 +303,13 @@ for test_type in FOLDER_LIST:
         if cont == 'y':
             continue
 
-        while True:
-            tester_name = input("please insert tester name: ")
-            if tester_name != "":
-                break
-
         test_path = os.path.join(VERIFICATION_TEST_PATH, test_type, test_file)
 
         date_string = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         pdf_name = test_file.replace(".docx", f"_{date_string}.pdf")
         OUTPUT_PATH = os.path.join(VERIFICATION_TEST_PATH, test_type, pdf_name)
+
+        print("-"*200)
 
         print(f"\nFile name: {test_file}")
         print(pre_conditions(test_path) + "\n")
